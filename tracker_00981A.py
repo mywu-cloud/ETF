@@ -2,9 +2,10 @@
 """
 ETF 00981A 持股追蹤器
 資料來源：MoneyDJ
+儲存格式：JSON（適合 Git 版控）
 """
 
-import sqlite3
+import json
 import re
 from datetime import date, datetime
 from pathlib import Path
@@ -16,7 +17,10 @@ from bs4 import BeautifulSoup
 # MoneyDJ 的 SSL 憑證缺少 Subject Key Identifier，需關閉驗證
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-DB_PATH = Path(__file__).parent / "holdings.db"
+DATA_DIR = Path(__file__).parent / "data"
+HISTORY_FILE = DATA_DIR / "history.json"
+LATEST_FILE = DATA_DIR / "latest.json"
+
 URL = "https://www.moneydj.com/etf/x/basic/basic0007B.xdjhtm?etfid=00981A.TW"
 HEADERS = {
     "User-Agent": (
@@ -28,38 +32,33 @@ HEADERS = {
 }
 
 
-# ── 資料庫初始化 ─────────────────────────────────────────────────────────────
+# ── 載入 / 儲存歷史 ─────────────────────────────────────────────────────────
 
-def init_db(conn: sqlite3.Connection) -> None:
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS snapshots (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            data_date TEXT NOT NULL,        -- 資料日期 (YYYY-MM-DD)
-            fetched_at TEXT NOT NULL        -- 抓取時間
-        );
-
-        CREATE TABLE IF NOT EXISTS holdings (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            snapshot_id INTEGER NOT NULL REFERENCES snapshots(id),
-            ticker      TEXT,               -- 股票代碼
-            name        TEXT NOT NULL,      -- 股票名稱
-            weight      REAL,               -- 投資比例 (%)
-            shares      INTEGER             -- 持有股數
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_holdings_snapshot ON holdings(snapshot_id);
-        CREATE INDEX IF NOT EXISTS idx_snapshots_date    ON snapshots(data_date);
-    """)
-    conn.commit()
+def load_history() -> list[dict]:
+    """載入歷史快照（list of snapshots），檔案不存在就回傳空 list"""
+    if HISTORY_FILE.exists():
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
 
-# ── 爬取資料 ─────────────────────────────────────────────────────────────────
+def save_history(history: list[dict]) -> None:
+    DATA_DIR.mkdir(exist_ok=True)
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+
+def save_latest(snapshot: dict) -> None:
+    """另存一份最新快照，方便前端 fetch"""
+    DATA_DIR.mkdir(exist_ok=True)
+    with open(LATEST_FILE, "w", encoding="utf-8") as f:
+        json.dump(snapshot, f, ensure_ascii=False, indent=2)
+
+
+# ── 爬取資料 ────────────────────────────────────────────────────────────────
 
 def fetch_holdings() -> tuple[str, list[dict]]:
-    """
-    回傳 (data_date, holdings_list)
-    holdings_list: [{"ticker": "2330", "name": "台積電", "weight": 9.11, "shares": 5518000}, ...]
-    """
+    """回傳 (data_date, holdings_list)"""
     resp = requests.get(URL, headers=HEADERS, timeout=30, verify=False)
     resp.raise_for_status()
     resp.encoding = "utf-8"
@@ -106,64 +105,70 @@ def fetch_holdings() -> tuple[str, list[dict]]:
                 pass
 
         if name:
-            holdings.append({"ticker": ticker, "name": name, "weight": weight, "shares": shares})
+            holdings.append({
+                "ticker": ticker,
+                "name": name,
+                "weight": weight,
+                "shares": shares,
+            })
 
     return data_date, holdings
 
 
-# ── 存入資料庫 ────────────────────────────────────────────────────────────────
+# ── 加入新快照 ─────────────────────────────────────────────────────────────
 
-def save_snapshot(conn: sqlite3.Connection, data_date: str, holdings: list[dict]) -> int:
-    cur = conn.execute(
-        "INSERT INTO snapshots (data_date, fetched_at) VALUES (?, ?)",
-        (data_date, datetime.now().isoformat(timespec="seconds")),
-    )
-    snapshot_id = cur.lastrowid
-    conn.executemany(
-        "INSERT INTO holdings (snapshot_id, ticker, name, weight, shares) VALUES (?, ?, ?, ?, ?)",
-        [(snapshot_id, h["ticker"], h["name"], h["weight"], h["shares"]) for h in holdings],
-    )
-    conn.commit()
-    return snapshot_id
+def add_snapshot(history: list[dict], data_date: str, holdings: list[dict]) -> dict:
+    """把新的快照加入歷史；若同一個 data_date 已存在則覆蓋"""
+    snapshot = {
+        "data_date": data_date,
+        "fetched_at": datetime.now().isoformat(timespec="seconds"),
+        "holdings": holdings,
+    }
+
+    # 若已存在相同 data_date 的快照，覆蓋它（避免一天跑多次重複累積）
+    for i, snap in enumerate(history):
+        if snap["data_date"] == data_date:
+            history[i] = snapshot
+            return snapshot
+
+    history.append(snapshot)
+    # 依日期排序
+    history.sort(key=lambda s: s["data_date"])
+    return snapshot
 
 
-# ── 比較差異 ─────────────────────────────────────────────────────────────────
+# ── 比較最近兩次快照 ─────────────────────────────────────────────────────────
 
-def compare_latest_two(conn: sqlite3.Connection) -> None:
-    rows = conn.execute(
-        "SELECT id, data_date, fetched_at FROM snapshots ORDER BY id DESC LIMIT 2"
-    ).fetchall()
-
-    if len(rows) < 2:
+def compare_latest_two(history: list[dict]) -> None:
+    if len(history) < 2:
         print("(尚無前次快照可比較，這是第一筆資料)")
         return
 
-    new_id, new_date, new_time = rows[0]
-    old_id, old_date, old_time = rows[1]
+    new_snap = history[-1]
+    old_snap = history[-2]
+
+    new_date = new_snap["data_date"]
+    old_date = old_snap["data_date"]
 
     print(f"\n比較：{old_date} → {new_date}\n{'─'*55}")
 
-    def get_holdings(snap_id):
-        return {
-            row[0]: {"weight": row[1], "shares": row[2], "name": row[0]}
-            for row in conn.execute(
-                "SELECT name, weight, shares FROM holdings WHERE snapshot_id=?", (snap_id,)
-            )
-        }
+    def to_dict(holdings):
+        return {h["name"]: h for h in holdings}
 
-    old_h = get_holdings(old_id)
-    new_h = get_holdings(new_id)
+    old_h = to_dict(old_snap["holdings"])
+    new_h = to_dict(new_snap["holdings"])
 
-    added   = set(new_h) - set(old_h)
+    added = set(new_h) - set(old_h)
     removed = set(old_h) - set(new_h)
-    common  = set(new_h) & set(old_h)
+    common = set(new_h) & set(old_h)
 
     changed = [
-        (name, old_h[name]["weight"], new_h[name]["weight"],
-         old_h[name]["shares"], new_h[name]["shares"])
+        (name,
+         old_h[name].get("weight"), new_h[name].get("weight"),
+         old_h[name].get("shares"), new_h[name].get("shares"))
         for name in common
-        if old_h[name]["weight"] != new_h[name]["weight"]
-        or old_h[name]["shares"] != new_h[name]["shares"]
+        if old_h[name].get("weight") != new_h[name].get("weight")
+        or old_h[name].get("shares") != new_h[name].get("shares")
     ]
     changed.sort(key=lambda x: abs((x[2] or 0) - (x[1] or 0)), reverse=True)
 
@@ -171,13 +176,13 @@ def compare_latest_two(conn: sqlite3.Connection) -> None:
         print(f"\n【新增持股】{len(added)} 支")
         for name in sorted(added):
             h = new_h[name]
-            print(f"  + {name:15s}  {h['weight'] or 0:6.2f}%  {h['shares'] or 0:>12,} 股")
+            print(f"  + {name:15s}  {h.get('weight') or 0:6.2f}%  {h.get('shares') or 0:>12,} 股")
 
     if removed:
         print(f"\n【移除持股】{len(removed)} 支")
         for name in sorted(removed):
             h = old_h[name]
-            print(f"  - {name:15s}  {h['weight'] or 0:6.2f}%  {h['shares'] or 0:>12,} 股")
+            print(f"  - {name:15s}  {h.get('weight') or 0:6.2f}%  {h.get('shares') or 0:>12,} 股")
 
     if changed:
         print(f"\n【比例/股數變化】{len(changed)} 支")
@@ -194,45 +199,39 @@ def compare_latest_two(conn: sqlite3.Connection) -> None:
         print("  (本次持股與前次完全相同)")
 
 
-# ── 列印目前持股 ──────────────────────────────────────────────────────────────
+# ── 列印目前持股 ─────────────────────────────────────────────────────────────
 
-def print_latest(conn: sqlite3.Connection) -> None:
-    row = conn.execute(
-        "SELECT id, data_date FROM snapshots ORDER BY id DESC LIMIT 1"
-    ).fetchone()
-    if row is None:
+def print_latest(history: list[dict]) -> None:
+    if not history:
         return
 
-    snap_id, data_date = row
-    print(f"\n【最新持股】資料日期：{data_date}\n{'─'*55}")
+    snap = history[-1]
+    print(f"\n【最新持股】資料日期：{snap['data_date']}\n{'─'*55}")
     print(f"  {'名稱':15s}  {'代碼':>6}  {'比例':>7}  {'持股數':>12}")
     print(f"  {'─'*15}  {'─'*6}  {'─'*7}  {'─'*12}")
-    for name, ticker, weight, shares in conn.execute(
-        "SELECT name, ticker, weight, shares FROM holdings "
-        "WHERE snapshot_id=? ORDER BY weight DESC NULLS LAST",
-        (snap_id,),
-    ):
-        ticker_str = ticker or "─"
+
+    holdings = sorted(snap["holdings"], key=lambda h: h.get("weight") or 0, reverse=True)
+    for h in holdings:
+        ticker_str = h.get("ticker") or "─"
         print(
-            f"  {name:15s}  {ticker_str:>6}  {weight or 0:6.2f}%  {shares or 0:>12,}"
+            f"  {h['name']:15s}  {ticker_str:>6}  "
+            f"{h.get('weight') or 0:6.2f}%  {h.get('shares') or 0:>12,}"
         )
 
 
-# ── 歷史快照清單 ──────────────────────────────────────────────────────────────
+# ── 歷史快照清單 ─────────────────────────────────────────────────────────────
 
-def list_snapshots(conn: sqlite3.Connection) -> None:
-    rows = conn.execute(
-        "SELECT s.id, s.data_date, s.fetched_at, COUNT(h.id) "
-        "FROM snapshots s JOIN holdings h ON h.snapshot_id=s.id "
-        "GROUP BY s.id ORDER BY s.id DESC"
-    ).fetchall()
-    print(f"\n{'ID':>4}  {'資料日期':>10}  {'抓取時間':>20}  {'持股數':>6}")
+def list_snapshots(history: list[dict]) -> None:
+    print(f"\n{'#':>4}  {'資料日期':>10}  {'抓取時間':>20}  {'持股數':>6}")
     print(f"{'─'*4}  {'─'*10}  {'─'*20}  {'─'*6}")
-    for snap_id, data_date, fetched_at, cnt in rows:
-        print(f"{snap_id:>4}  {data_date:>10}  {fetched_at:>20}  {cnt:>6}")
+    for i, snap in enumerate(history, 1):
+        print(
+            f"{i:>4}  {snap['data_date']:>10}  "
+            f"{snap['fetched_at']:>20}  {len(snap['holdings']):>6}"
+        )
 
 
-# ── 主程式 ────────────────────────────────────────────────────────────────────
+# ── 主程式 ──────────────────────────────────────────────────────────────────
 
 def main() -> None:
     import argparse
@@ -240,31 +239,32 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="ETF 00981A 持股追蹤器")
     sub = parser.add_subparsers(dest="cmd")
 
-    sub.add_parser("fetch",     help="抓取最新持股並存入資料庫")
-    sub.add_parser("show",      help="顯示最新快照持股清單")
-    sub.add_parser("diff",      help="比較最近兩次快照的差異")
-    sub.add_parser("list",      help="列出所有歷史快照")
+    sub.add_parser("fetch", help="抓取最新持股並存入歷史")
+    sub.add_parser("show", help="顯示最新快照持股清單")
+    sub.add_parser("diff", help="比較最近兩次快照的差異")
+    sub.add_parser("list", help="列出所有歷史快照")
 
     args = parser.parse_args()
 
-    with sqlite3.connect(DB_PATH) as conn:
-        init_db(conn)
+    history = load_history()
 
-        if args.cmd == "fetch" or args.cmd is None:
-            print("正在抓取 MoneyDJ 00981A 持股資料…")
-            data_date, holdings = fetch_holdings()
-            snap_id = save_snapshot(conn, data_date, holdings)
-            print(f"已儲存快照 #{snap_id}：資料日期 {data_date}，共 {len(holdings)} 支持股")
-            compare_latest_two(conn)
+    if args.cmd == "fetch" or args.cmd is None:
+        print("正在抓取 MoneyDJ 00981A 持股資料…")
+        data_date, holdings = fetch_holdings()
+        snap = add_snapshot(history, data_date, holdings)
+        save_history(history)
+        save_latest(snap)
+        print(f"已儲存快照：資料日期 {data_date}，共 {len(holdings)} 支持股")
+        compare_latest_two(history)
 
-        elif args.cmd == "show":
-            print_latest(conn)
+    elif args.cmd == "show":
+        print_latest(history)
 
-        elif args.cmd == "diff":
-            compare_latest_two(conn)
+    elif args.cmd == "diff":
+        compare_latest_two(history)
 
-        elif args.cmd == "list":
-            list_snapshots(conn)
+    elif args.cmd == "list":
+        list_snapshots(history)
 
 
 if __name__ == "__main__":
