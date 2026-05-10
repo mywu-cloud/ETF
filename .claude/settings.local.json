@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.twse.com.tw)",
+      "WebFetch(domain:www.ezmoney.com.tw)",
+      "WebFetch(domain:www.pocket.tw)",
+      "WebFetch(domain:www.upamc.com.tw)",
+      "WebFetch(domain:www.cmoney.tw)",
+      "WebFetch(domain:stockanalysis.com)",
+      "WebFetch(domain:mops.twse.com.tw)",
+      "WebFetch(domain:api.tej.com.tw)",
+      "WebFetch(domain:www.moneydj.com)",
+      "Bash(python3 -c \"import requests; import bs4; print\\('OK'\\)\")",
+      "Bash(python3 tracker.py fetch)",
+      "Bash(python3 tracker.py show)",
+      "Bash(python3 tracker.py list)",
+      "Bash(python3 make_html.py)",
+      "Bash(python3 make_excel.py)",
+      "Bash(open \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.html\")",
+      "Bash(open \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.xlsx\")",
+      "Bash(sqlite3 \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.db\" \".tables\")",
+      "Bash(sqlite3 \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.db\" \"SELECT name FROM sqlite_master WHERE type='table';\")",
+      "Bash(sqlite3 \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.db\" \"SELECT * FROM snapshots LIMIT 5;\")",
+      "Bash(sqlite3 \"/Users/mykerwu/Library/Mobile Documents/com~apple~CloudDocs/ETF_00981A/holdings.db\" \".schema\")",
+      "Bash(python3 tracker_00992A.py fetch)",
+      "Bash(python3 make_html_00992A.py)",
+      "Skill(schedule)",
+      "Skill(schedule:*)",
+      "Bash(ls ~/Library/LaunchAgents/ 2>/dev/null || echo \"\\(空目錄或不存在\\)\")",
+      "Bash(launchctl unload *)",
+      "Bash(launchctl load *)",
+      "Bash(launchctl list *)",
+      "Bash(python3 -c ' *)",
+      "Bash(open holdings_00992A.html)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} %{url_effective}' 'https://www.moneydj.com/etf/x/basic/basic0007B.xdjhtm?etfid=00992A.TW&d=20260410' -H 'User-Agent: Mozilla/5.0' -H 'Referer: https://www.moneydj.com/' --insecure)",
+      "WebFetch(domain:norway.twsthr.info)",
+      "mcp__Claude_in_Chrome__navigate"
+    ]
+  }
+}
