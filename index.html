@@ -506,8 +506,8 @@ function renderDiff() {
 
   document.getElementById('diff-content').innerHTML =
     (oldDate === newDate ? '<div class="card"><p class="empty">請選擇不同日期進行比較</p></div>' : '') +
-    staticSection('🟢 新增持股', added,   'diff-new', n => null,      n => newMap[n]) +
-    staticSection('🔴 移除持股', removed, 'diff-del', n => oldMap[n], n => null     ) +
+    staticSection('🔴 新增持股', added,   'diff-new', n => null,      n => newMap[n]) +
+    staticSection('🟢 移除持股', removed, 'diff-del', n => oldMap[n], n => null     ) +
     changedSection +
     (added.length + removed.length + _changedRows.length === 0
       ? '<div class="card"><p class="empty">兩次快照持股完全相同</p></div>' : '');
