@@ -72,36 +72,43 @@
 
 /* ── 手機版 RWD ───────────────────────────────────── */
 @media (max-width: 600px) {
-  html { font-size: 13px; }
-  body { font-size: 13px; }
+  html { font-size: 12px; }
+  body { font-size: 12px; }
 
-  header { padding: 14px 16px; gap: 10px; }
-  header h1 { font-size: 16px; line-height: 1.3; }
-  header span { font-size: 11px; }
+  header { padding: 12px 14px; gap: 8px; }
+  header h1 { font-size: 15px; line-height: 1.3; }
+  header span { font-size: 10px; }
 
-  .container { margin: 12px auto; padding: 0 10px; }
+  .container { margin: 10px auto; padding: 0 10px; }
 
-  .tabs { gap: 2px; margin-bottom: 12px; }
-  .tab { padding: 8px 12px; font-size: 12px; flex: 1; min-width: 0; }
+  .tabs { gap: 2px; margin-bottom: 10px; }
+  .tab { padding: 7px 10px; font-size: 11px; flex: 1; min-width: 0; }
 
-  .card { padding: 14px; border-radius: 10px; margin-bottom: 12px; }
-  .card h2 { font-size: 13px; margin-bottom: 10px; }
+  .card { padding: 12px; border-radius: 10px; margin-bottom: 10px; }
+  .card h2 { font-size: 12px; margin-bottom: 8px; }
 
-  .controls { gap: 8px; margin-bottom: 12px; }
+  .controls { gap: 8px; margin-bottom: 10px; }
   .controls input,
-  .controls select { font-size: 13px; padding: 6px 10px; }
+  .controls select { font-size: 12px; padding: 6px 9px; }
+  label { font-size: 11px; }
   #search { width: 100% !important; }
 
-  .chips { gap: 8px; margin-bottom: 12px; }
-  .chip { padding: 10px 12px; min-width: 0; flex: 1 1 45%; }
-  .chip .val { font-size: 17px; }
-  .chip .lbl { font-size: 11px; }
+  .chips { gap: 6px; margin-bottom: 10px; }
+  .chip { padding: 8px 10px; min-width: 0; flex: 1 1 45%; }
+  .chip .val { font-size: 15px; }
+  .chip .lbl { font-size: 10px; }
 
-  table { font-size: 12px; }
-  thead th { padding: 8px 8px; font-size: 11px; }
-  td { padding: 7px 8px; }
-  td.bar-cell { width: 60px; }
-  .badge { font-size: 11px; padding: 1px 6px; }
+  table { font-size: 11px; }
+  thead th { padding: 6px 6px; font-size: 10px; }
+  thead th[data-key] { padding-right: 16px; }
+  thead th::after { font-size: 9px !important; margin-left: 2px; }
+  td { padding: 6px 6px; }
+  td.bar-cell { width: 50px; }
+  .badge { font-size: 10px; padding: 1px 5px; }
+  .bar-bg, .bar-fill { height: 6px; }
+
+  .loading { font-size: 13px; padding: 40px; }
+  .empty { padding: 24px; font-size: 12px; }
 
   #chart-bar-wrap { height: 520px; }
   #chart-pie { max-height: 220px; }
@@ -337,7 +344,7 @@ function renderCharts() {
       labels: top10.map(r => r.name),
       datasets: [{ data: top10.map(r => r.weight), backgroundColor: COLORS }]
     },
-    options: { plugins: { legend: { position: window.innerWidth <= 600 ? 'bottom' : 'right', labels: { font: { size: window.innerWidth <= 600 ? 10 : 11 }, boxWidth: window.innerWidth <= 600 ? 10 : 40 } } }, cutout: '55%' }
+    options: { plugins: { legend: { position: window.innerWidth <= 600 ? 'bottom' : 'right', labels: { font: { size: window.innerWidth <= 600 ? 9 : 11 }, boxWidth: window.innerWidth <= 600 ? 10 : 40 } } }, cutout: '55%' }
   });
 
   barChart = new Chart(document.getElementById('chart-bar'), {
@@ -367,13 +374,13 @@ function renderCharts() {
       layout: { padding: { right: window.innerWidth <= 600 ? 24 : 48 } },
       scales: {
         x: {
-          title: { display: true, text: '投資比例 (%)', font: { size: window.innerWidth <= 600 ? 10 : 13 } },
-          ticks: { font: { size: window.innerWidth <= 600 ? 10 : 13 } },
+          title: { display: true, text: '投資比例 (%)', font: { size: window.innerWidth <= 600 ? 9 : 13 } },
+          ticks: { font: { size: window.innerWidth <= 600 ? 9 : 13 } },
           grid: { color: '#f0f2f5' }
         },
         y: {
           ticks: {
-            font: { size: window.innerWidth <= 600 ? 10 : 14, weight: '600' },
+            font: { size: window.innerWidth <= 600 ? 9 : 14, weight: '600' },
             color: '#1a1a2e',
             callback: (val, i) => `${i+1}. ${top20[i]?.name ?? val}`
           },
