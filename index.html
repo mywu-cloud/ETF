@@ -33,8 +33,11 @@
               border-bottom: 2px solid #e2e8f0; cursor: pointer; user-select: none; white-space: nowrap;
               font-size: 13px; letter-spacing: .02em; }
   thead th:hover { background: #eef0f8; }
-  thead th.sort-asc::after { content: " ▲"; opacity: .6; }
-  thead th.sort-desc::after { content: " ▼"; opacity: .6; }
+  thead th { position: relative; padding-right: 22px; }
+  thead th::after { content: " ⇅"; opacity: .25; font-size: 11px; margin-left: 4px; font-weight: normal; }
+  thead th.sort-asc::after { content: " ▲"; opacity: 1; color: #4361ee; }
+  thead th.sort-desc::after { content: " ▼"; opacity: 1; color: #4361ee; }
+  thead th.bar-cell::after, thead th:empty::after { content: none; }
   tbody tr { border-bottom: 1px solid #f0f2f5; transition: background .15s; }
   tbody tr:hover { background: #f7f9ff; }
   td { padding: 10px 14px; }
@@ -134,14 +137,14 @@
         <div class="tbl-wrap">
           <table id="tbl">
             <thead><tr>
-              <th onclick="sortBy('rank')">#</th>
-              <th onclick="sortBy('name')">股票名稱</th>
-              <th onclick="sortBy('ticker')">代碼</th>
-              <th onclick="sortBy('weight')">投資比例</th>
+              <th data-key="rank" onclick="sortBy('rank')">#</th>
+              <th data-key="name" onclick="sortBy('name')">股票名稱</th>
+              <th data-key="ticker" onclick="sortBy('ticker')">代碼</th>
+              <th data-key="weight" onclick="sortBy('weight')">投資比例</th>
               <th class="bar-cell"></th>
-              <th onclick="sortBy('shares')">持有股數</th>
-              <th onclick="sortBy('prev_shares')">前期股數</th>
-              <th onclick="sortBy('delta_shares')">股數差異</th>
+              <th data-key="shares" onclick="sortBy('shares')">持有股數</th>
+              <th data-key="prev_shares" onclick="sortBy('prev_shares')">前期股數</th>
+              <th data-key="delta_shares" onclick="sortBy('delta_shares')">股數差異</th>
             </tr></thead>
             <tbody id="tbl-body"></tbody>
           </table>
@@ -244,13 +247,21 @@ function fmt(n) { return Number(n).toLocaleString('zh-TW'); }
 // ── Holdings ──────────────────────────────────────────
 function sortBy(key) {
   if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+  updateHoldingsSortIcons();
   renderHoldings();
+}
+
+function updateHoldingsSortIcons() {
+  const ths = document.querySelectorAll('#tbl thead th');
+  ths.forEach(th => th.classList.remove('sort-asc','sort-desc'));
+  const target = document.querySelector(`#tbl thead th[data-key="${sortKey}"]`);
+  if (target) target.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
 }
 
 function renderHoldings() {
   const date = document.getElementById('snap-sel').value;
   if (!date || !DATA[date]) return;
+  updateHoldingsSortIcons();
 
   const q = document.getElementById('search').value.trim().toLowerCase();
   const prevDate = DATES[DATES.indexOf(date) - 1] ?? null;
