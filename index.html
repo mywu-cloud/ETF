@@ -33,8 +33,9 @@
               border-bottom: 2px solid #e2e8f0; cursor: pointer; user-select: none; white-space: nowrap;
               font-size: 13px; letter-spacing: .02em; }
   thead th:hover { background: #eef0f8; }
-  thead th { position: relative; padding-right: 22px; }
-  thead th::after { content: " ⇅"; opacity: .25; font-size: 11px; margin-left: 4px; font-weight: normal; }
+  thead th { position: relative; }
+  thead th[data-key] { padding-right: 22px; }
+  thead th[data-key]::after { content: " ⇅"; opacity: .25; font-size: 11px; margin-left: 4px; font-weight: normal; }
   thead th.sort-asc::after { content: " ▲"; opacity: 1; color: #4361ee; }
   thead th.sort-desc::after { content: " ▼"; opacity: 1; color: #4361ee; }
   thead th.bar-cell::after, thead th:empty::after { content: none; }
