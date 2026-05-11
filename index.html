@@ -103,8 +103,9 @@
   td.bar-cell { width: 60px; }
   .badge { font-size: 11px; padding: 1px 6px; }
 
-  #chart-bar-wrap { height: 460px; }
-  #chart-pie { max-height: 240px; }
+  #chart-bar-wrap { height: 520px; }
+  #chart-pie { max-height: 220px; }
+  .chart-top { gap: 12px; }
 }
 </style>
 </head>
@@ -336,7 +337,7 @@ function renderCharts() {
       labels: top10.map(r => r.name),
       datasets: [{ data: top10.map(r => r.weight), backgroundColor: COLORS }]
     },
-    options: { plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } }, cutout: '55%' }
+    options: { plugins: { legend: { position: window.innerWidth <= 600 ? 'bottom' : 'right', labels: { font: { size: window.innerWidth <= 600 ? 10 : 11 }, boxWidth: window.innerWidth <= 600 ? 10 : 40 } } }, cutout: '55%' }
   });
 
   barChart = new Chart(document.getElementById('chart-bar'), {
@@ -348,7 +349,7 @@ function renderCharts() {
         data: top20.map(r => r.weight),
         backgroundColor: top20.map((_, i) => i < 3 ? '#1a1a2e' : i < 10 ? '#4361ee' : '#7b97ff'),
         borderRadius: 4,
-        barThickness: 20
+        barThickness: window.innerWidth <= 600 ? 12 : 20
       }]
     },
     options: {
@@ -363,16 +364,16 @@ function renderCharts() {
         },
         datalabels: { display: false }
       },
-      layout: { padding: { right: 48 } },
+      layout: { padding: { right: window.innerWidth <= 600 ? 24 : 48 } },
       scales: {
         x: {
-          title: { display: true, text: '投資比例 (%)', font: { size: 13 } },
-          ticks: { font: { size: 13 } },
+          title: { display: true, text: '投資比例 (%)', font: { size: window.innerWidth <= 600 ? 10 : 13 } },
+          ticks: { font: { size: window.innerWidth <= 600 ? 10 : 13 } },
           grid: { color: '#f0f2f5' }
         },
         y: {
           ticks: {
-            font: { size: 14, weight: '600' },
+            font: { size: window.innerWidth <= 600 ? 10 : 14, weight: '600' },
             color: '#1a1a2e',
             callback: (val, i) => `${i+1}. ${top20[i]?.name ?? val}`
           },
