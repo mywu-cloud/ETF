@@ -390,7 +390,7 @@ function renderCharts() {
       datasets: [{
         label: '投資比例 (%)',
         data: top20.map(r => r.weight),
-        backgroundColor: top20.map((_, i) => i < 3 ? '#1a1a2e' : i < 10 ? '#4361ee' : '#7b97ff'),
+        backgroundColor: top20.map((_, i) => i < 3 ? '#E63946' : i < 5 ? '#FF8C42' : '#7b97ff'),
         borderRadius: 4,
         barThickness: window.innerWidth <= 600 ? 12 : 20
       }]
