@@ -65,6 +65,43 @@
   .panel.active { display: block; }
   .empty { text-align: center; padding: 40px; color: #aaa; }
   .loading { text-align: center; padding: 60px; color: #888; font-size: 16px; }
+
+/* ── 手機版 RWD ───────────────────────────────────── */
+@media (max-width: 600px) {
+  html { font-size: 13px; }
+  body { font-size: 13px; }
+
+  header { padding: 14px 16px; gap: 10px; }
+  header h1 { font-size: 16px; line-height: 1.3; }
+  header span { font-size: 11px; }
+
+  .container { margin: 12px auto; padding: 0 10px; }
+
+  .tabs { gap: 2px; margin-bottom: 12px; }
+  .tab { padding: 8px 12px; font-size: 12px; flex: 1; min-width: 0; }
+
+  .card { padding: 14px; border-radius: 10px; margin-bottom: 12px; }
+  .card h2 { font-size: 13px; margin-bottom: 10px; }
+
+  .controls { gap: 8px; margin-bottom: 12px; }
+  .controls input,
+  .controls select { font-size: 13px; padding: 6px 10px; }
+  #search { width: 100% !important; }
+
+  .chips { gap: 8px; margin-bottom: 12px; }
+  .chip { padding: 10px 12px; min-width: 0; flex: 1 1 45%; }
+  .chip .val { font-size: 17px; }
+  .chip .lbl { font-size: 11px; }
+
+  table { font-size: 12px; }
+  thead th { padding: 8px 8px; font-size: 11px; }
+  td { padding: 7px 8px; }
+  td.bar-cell { width: 60px; }
+  .badge { font-size: 11px; padding: 1px 6px; }
+
+  #chart-bar-wrap { height: 460px; }
+  #chart-pie { max-height: 240px; }
+}
 </style>
 </head>
 <body>
