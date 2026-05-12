@@ -139,7 +139,7 @@
 <header>
   <div>
     <h1 id="etf-title">ETF</h1>
-    <span id="etf-subtitle">持股追蹤儀表板</span></div><div id="etf-switcher" style="margin-left:auto;display:flex;gap:8px"></div>
+    <span id="etf-subtitle">持股追蹤儀表板</span></div><div id="etf-switcher" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center"></div>
   </div>
 </header>
 <div class="container">
@@ -227,7 +227,7 @@
 <script>
 let DATA = {};
 let DATES = [];
-let sortKey = 'weight', sortDir = -1; const ETF_LIST = [{id:'00981A',name:'主動統一台股增長'},{id:'00403A',name:'主動統一升級50'}]; let CURRENT_ETF = (new URLSearchParams(location.search)).get('etf') || localStorage.getItem('current_etf') || '00981A'; function renderEtfSwitcher() { const wrap = document.getElementById('etf-switcher'); if (!wrap) return; wrap.innerHTML = ETF_LIST.map(e => `<button onclick="switchEtf('${e.id}')" style="padding:6px 14px;border-radius:99px;border:1px solid ${e.id===CURRENT_ETF?'#fff':'rgba(255,255,255,.3)'};background:${e.id===CURRENT_ETF?'#fff':'transparent'};color:${e.id===CURRENT_ETF?'#1a1a2e':'#fff'};font-weight:600;cursor:pointer;font-size:13px">${e.id}</button>`).join(''); const meta = ETF_LIST.find(e=>e.id===CURRENT_ETF); document.getElementById('etf-title').innerHTML = `ETF ${CURRENT_ETF} &nbsp;${meta?meta.name:''}`; document.title = `ETF ${CURRENT_ETF} 持股追蹤`; } function switchEtf(id) { if (id === CURRENT_ETF) return; CURRENT_ETF = id; localStorage.setItem('current_etf', id); renderEtfSwitcher(); document.getElementById('loading').style.display = 'block'; document.getElementById('main').style.display = 'none'; document.getElementById('loading').innerHTML = '⏳ 載入資料中…'; loadData(); }
+let sortKey = 'weight', sortDir = -1; const ETF_LIST = [{id:'00981A',name:'主動統一台股增長'},{id:'00403A',name:'主動統一升級50'}]; let CURRENT_ETF = (new URLSearchParams(location.search)).get('etf') || localStorage.getItem('current_etf') || '00981A'; function renderEtfSwitcher() { const wrap = document.getElementById('etf-switcher'); if (!wrap) return; wrap.innerHTML = '<span style="color:#fff;font-size:13px;font-weight:600;opacity:.85;margin-right:4px">ETF 列表：</span>' + ETF_LIST.map(e => `<button onclick="switchEtf('${e.id}')" style="padding:6px 14px;border-radius:99px;border:1px solid ${e.id===CURRENT_ETF?'#fff':'rgba(255,255,255,.3)'};background:${e.id===CURRENT_ETF?'#fff':'transparent'};color:${e.id===CURRENT_ETF?'#1a1a2e':'#fff'};font-weight:600;cursor:pointer;font-size:13px;white-space:nowrap">${e.id}${e.name?' '+e.name:''}</button>`).join(''); const meta = ETF_LIST.find(e=>e.id===CURRENT_ETF); document.getElementById('etf-title').innerHTML = `ETF ${CURRENT_ETF} &nbsp;${meta?meta.name:''}`; document.title = `ETF ${CURRENT_ETF} 持股追蹤`; } function switchEtf(id) { if (id === CURRENT_ETF) return; CURRENT_ETF = id; localStorage.setItem('current_etf', id); renderEtfSwitcher(); document.getElementById('loading').style.display = 'block'; document.getElementById('main').style.display = 'none'; document.getElementById('loading').innerHTML = '⏳ 載入資料中…'; loadData(); }
 
 // ── 載入資料 ──────────────────────────────────────────
 async function loadData() { renderEtfSwitcher();
