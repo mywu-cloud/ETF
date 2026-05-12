@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ETF 00981A 持股追蹤</title>
+<title>ETF 持股追蹤</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -138,8 +138,8 @@
 <body>
 <header>
   <div>
-    <h1>ETF 00981A &nbsp;主動統一台股增長</h1>
-    <span>持股追蹤儀表板</span>
+    <h1 id="etf-title">ETF</h1>
+    <span id="etf-subtitle">持股追蹤儀表板</span></div><div id="etf-switcher" style="margin-left:auto;display:flex;gap:8px"></div>
   </div>
 </header>
 <div class="container">
@@ -227,12 +227,12 @@
 <script>
 let DATA = {};
 let DATES = [];
-let sortKey = 'weight', sortDir = -1;
+let sortKey = 'weight', sortDir = -1; const ETF_LIST = [{id:'00981A',name:'主動統一台股增長'},{id:'00403A',name:''}]; let CURRENT_ETF = (new URLSearchParams(location.search)).get('etf') || localStorage.getItem('current_etf') || '00981A'; function renderEtfSwitcher() { const wrap = document.getElementById('etf-switcher'); if (!wrap) return; wrap.innerHTML = ETF_LIST.map(e => `<button onclick="switchEtf('${e.id}')" style="padding:6px 14px;border-radius:99px;border:1px solid ${e.id===CURRENT_ETF?'#fff':'rgba(255,255,255,.3)'};background:${e.id===CURRENT_ETF?'#fff':'transparent'};color:${e.id===CURRENT_ETF?'#1a1a2e':'#fff'};font-weight:600;cursor:pointer;font-size:13px">${e.id}</button>`).join(''); const meta = ETF_LIST.find(e=>e.id===CURRENT_ETF); document.getElementById('etf-title').innerHTML = `ETF ${CURRENT_ETF} &nbsp;${meta?meta.name:''}`; document.title = `ETF ${CURRENT_ETF} 持股追蹤`; } function switchEtf(id) { if (id === CURRENT_ETF) return; CURRENT_ETF = id; localStorage.setItem('current_etf', id); renderEtfSwitcher(); document.getElementById('loading').style.display = 'block'; document.getElementById('main').style.display = 'none'; document.getElementById('loading').innerHTML = '⏳ 載入資料中…'; loadData(); }
 
 // ── 載入資料 ──────────────────────────────────────────
-async function loadData() {
+async function loadData() { renderEtfSwitcher();
   try {
-    const resp = await fetch('data/history.json?t=' + Date.now());
+    const resp = await fetch('data/history_' + CURRENT_ETF + '.json?t=' + Date.now());
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const history = await resp.json();
 
