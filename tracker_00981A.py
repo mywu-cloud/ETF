@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DATA_DIR = Path(__file__).parent / "data"
-HISTORY_FILE = DATA_DIR / "history.json"
-LATEST_FILE = DATA_DIR / "latest.json"
+HISTORY_FILE = DATA_DIR / "history_00981A.json"
+LATEST_FILE = DATA_DIR / "latest_00981A.json"
 
 URL = "https://www.moneydj.com/etf/x/basic/basic0007B.xdjhtm?etfid=00981A.TW"
 HEADERS = {
