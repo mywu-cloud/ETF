@@ -28,7 +28,7 @@ jobs:
           pip install requests beautifulsoup4 urllib3
 
       - name: Run tracker script
-        run: python tracker_00981A.py
+        run: python tracker_00981A.py && python tracker_00403A.py
 
       - name: Commit and push if changed
         run: |
