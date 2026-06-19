@@ -87,37 +87,46 @@ margin-top: 0;
 .empty { text-align: center; padding: 40px; color: #aaa; }
 .loading { text-align: center; padding: 60px; color: #888; font-size: 16px; }
 .price-loading { color: #aaa; font-size: 14px; }
-/* 手機版 RWD （最小字型 14px） */
+/* ── 手機版 RWD ───────────────────────────────────── */
 @media (max-width: 600px) {
-html { font-size: 14px; }
-body { font-size: 14px; }
+html { font-size: 12px; }
+body { font-size: 12px; }
+
 header { padding: 12px 14px; gap: 8px; }
-header h1 { font-size: 16px; line-height: 1.3; }
-header span { font-size: 14px; }
+header h1 { font-size: 15px; line-height: 1.3; }
+header span { font-size: 10px; }
+
 .container { margin: 10px auto; padding: 0 10px; }
+
 .tabs { gap: 2px; margin-bottom: 10px; }
-.tab { padding: 7px 10px; font-size: 14px; flex: 1; min-width: 0; }
+.tab { padding: 7px 10px; font-size: 11px; flex: 1; min-width: 0; }
+
 .card { padding: 12px; border-radius: 10px; margin-bottom: 10px; }
-.card h2 { font-size: 14px; margin-bottom: 8px; }
+.card h2 { font-size: 12px; margin-bottom: 8px; }
+
 .controls { gap: 8px; margin-bottom: 10px; }
 .controls input,
-.controls select { font-size: 14px; padding: 6px 9px; }
-label { font-size: 14px; }
+.controls select { font-size: 12px; padding: 6px 9px; }
+label { font-size: 11px; }
 #search { width: 100% !important; }
+
 .chips { gap: 6px; margin-bottom: 10px; }
 .chip { padding: 8px 10px; min-width: 0; flex: 1 1 45%; }
 .chip .val { font-size: 15px; }
-.chip .lbl { font-size: 14px; }
-table { font-size: 14px; }
-thead th { padding: 6px 6px; font-size: 14px; }
+.chip .lbl { font-size: 10px; }
+
+table { font-size: 11px; }
+thead th { padding: 6px 6px; font-size: 10px; }
 thead th[data-key] { padding-right: 16px; }
-thead th::after { font-size: 10px !important; margin-left: 2px; }
-td { padding: 6px 6px; font-size: 14px; }
+thead th::after { font-size: 9px !important; margin-left: 2px; }
+td { padding: 6px 6px; }
 td.bar-cell { width: 50px; }
-.badge { font-size: 14px; padding: 1px 5px; }
+.badge { font-size: 10px; padding: 1px 5px; }
 .bar-bg, .bar-fill { height: 6px; }
-.loading { font-size: 14px; padding: 40px; }
-.empty { padding: 24px; font-size: 14px; }
+
+.loading { font-size: 13px; padding: 40px; }
+.empty { padding: 24px; font-size: 12px; }
+
 #chart-bar-wrap { height: 520px; }
 #chart-pie { max-height: 220px; }
 .chart-top { gap: 12px; }
@@ -162,8 +171,8 @@ font-size: 14px;
 }
 @media (max-width: 600px) {
 .quick-ranges { gap: 4px; margin-bottom: 10px; }
-.qr-btn { padding: 5px 10px; font-size: 14px; }
-.diff-info { font-size: 14px; padding: 8px 10px; }
+.qr-btn { padding: 5px 10px; font-size: 11px; }
+.diff-info { font-size: 11px; padding: 8px 10px; }
 }
 </style>
 </head>
@@ -205,8 +214,8 @@ font-size: 14px;
 <th data-key="weight" onclick="sortBy('weight')">投資比例</th>
 <th class="bar-cell"></th>
 <th data-key="price" onclick="sortBy('price')">股價</th>
-<th data-key="change" onclick="sortBy('change')">漲跨</th>
-<th data-key="changeP" onclick="sortBy('changeP')">漲跨幅</th>
+<th data-key="change" onclick="sortBy('change')">漲跌</th>
+<th data-key="changeP" onclick="sortBy('changeP')">漲跌幅</th>
 <th data-key="shares" onclick="sortBy('shares')">持有股數</th>
 <th data-key="prev_shares" onclick="sortBy('prev_shares')">前期股數</th>
 <th data-key="delta_shares" onclick="sortBy('delta_shares')">股數差異</th>
@@ -292,43 +301,74 @@ document.getElementById('loading').innerHTML = '⏳ 載入資料中…';
 loadData();
 }
 
-// ── 資料价格 API (TWSE STOCK_DAY_ALL) ────────────────────────
+// ── 股價 API：TWSE（上市）+ FinMind（上櫃 OTC） ─────────────────
+// 已知上櫃市場（TPEx/OTC）代碼前綴：4字頭部分、5字頭、6字頭、8字頭
+// 採用動態判斷：先從 TWSE 取資料，再對剩餘未取到的股票用 FinMind 補抓
 async function fetchPrices(tickers) {
 if (!tickers || tickers.length === 0) return;
 const statusEl = document.getElementById('price-status');
 if (statusEl) statusEl.textContent = '⌛ 載入股價資料中…';
 try {
-// TWSE 每日収盤資料 (STOCK_DAY_ALL): 支持 CORS
 const today = new Date();
 const yyyy = today.getFullYear();
 const mm = String(today.getMonth()+1).padStart(2,'0');
 const dd = String(today.getDate()).padStart(2,'0');
 const dateStr = yyyy + mm + dd;
-const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=${dateStr}`;
-const resp = await fetch(url);
-if (!resp.ok) throw new Error('HTTP ' + resp.status);
-const json = await resp.json();
+const isoDate = yyyy + '-' + mm + '-' + dd;
+
 PRICE_DATA = {};
-if (json.data && json.fields) {
-// fields: [證券代號, 證券名稱, 成交股數, 成交金額, 開盤價, 最高價, 最低價, 收盤價, 漲跌價差, 成交筆數]
+
+// Step 1: TWSE 上市股票
+const twseResp = await fetch('https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=' + dateStr);
+if (twseResp.ok) {
+const twseJson = await twseResp.json();
 const tickerSet = new Set(tickers);
-for (const row of json.data) {
+for (const row of (twseJson.data || [])) {
 const ticker = row[0].trim();
 if (!tickerSet.has(ticker)) continue;
-const closeStr = row[7].replace(/,/g,'');
+const close = parseFloat(row[7].replace(/,/g,''));
 const changeStr = row[8].replace(/,/g,'');
-const close = parseFloat(closeStr);
 const changeSign = changeStr.startsWith('+') ? 1 : changeStr.startsWith('-') ? -1 : 0;
 const changeVal = parseFloat(changeStr.replace(/[+\-]/g,'')) * changeSign;
 const prevClose = close - changeVal;
 const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
+if (!isNaN(close)) {
 PRICE_DATA[ticker] = {
-price: isNaN(close) ? null : close,
-change: isNaN(changeVal) ? null : parseFloat(changeVal.toFixed(2)),
-changeP: isNaN(changeP) ? null : changeP
+price: close,
+change: parseFloat(changeVal.toFixed(2)),
+changeP: changeP
 };
 }
 }
+}
+
+// Step 2: OTC 上櫃股票（未從 TWSE 取得者）用 FinMind API 補抓
+const missingTickers = tickers.filter(t => t && !PRICE_DATA[t]);
+if (missingTickers.length > 0) {
+const base = 'https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&start_date=' + isoDate;
+const otcResults = await Promise.allSettled(
+missingTickers.map(t =>
+fetch(base + '&data_id=' + t)
+.then(r => r.json())
+.then(d => ({ticker: t, row: d.data?.[0]}))
+)
+);
+for (const result of otcResults) {
+if (result.status === 'fulfilled' && result.value.row) {
+const {ticker, row} = result.value;
+const close = row.close;
+const changeVal = row.spread;
+const prevClose = close - changeVal;
+const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
+PRICE_DATA[ticker] = {
+price: close,
+change: parseFloat(changeVal.toFixed(2)),
+changeP: changeP
+};
+}
+}
+}
+
 if (statusEl) {
 const loaded = Object.keys(PRICE_DATA).length;
 const now = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
