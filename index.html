@@ -209,13 +209,13 @@ font-size: 14px;
 <table id="tbl">
 <thead><tr>
 <th data-key="rank" onclick="sortBy('rank')">#</th>
-<th data-key="name" onclick="sortBy('name')">股票名稱</th>
 <th data-key="ticker" onclick="sortBy('ticker')">代碼</th>
-<th data-key="weight" onclick="sortBy('weight')">投資比例</th>
-<th class="bar-cell"></th>
+<th data-key="name" onclick="sortBy('name')">股票名稱</th>
 <th data-key="price" onclick="sortBy('price')">股價</th>
 <th data-key="change" onclick="sortBy('change')">漲跌</th>
 <th data-key="changeP" onclick="sortBy('changeP')">漲跌幅</th>
+<th data-key="weight" onclick="sortBy('weight')">投資比例</th>
+<th class="bar-cell"></th>
 <th data-key="shares" onclick="sortBy('shares')">持有股數</th>
 <th data-key="prev_shares" onclick="sortBy('prev_shares')">前期股數</th>
 <th data-key="delta_shares" onclick="sortBy('delta_shares')">股數差異</th>
@@ -502,15 +502,15 @@ changePStr = `<span class="${cls}">${sign}${r.changeP.toFixed(2)}%</span>`;
 }
 return `<tr>
 <td class="num" style="color:#aaa">${r.rank}</td>
-<td><b>${r.name}</b></td>
 <td style="color:#4361ee;font-weight:600">${r.ticker || '─'}</td>
+<td><b>${r.name}</b></td>
+<td class="num">${priceStr}</td>
+<td class="num">${changeStr}</td>
+<td class="num">${changePStr}</td>
 <td class="num"><b>${r.weight.toFixed(2)}%</b></td>
 <td class="bar-cell">
 <div class="bar-bg"><div class="bar-fill" style="width:${(r.weight/maxW*100).toFixed(1)}%"></div></div>
 </td>
-<td class="num">${priceStr}</td>
-<td class="num">${changeStr}</td>
-<td class="num">${changePStr}</td>
 <td class="num">${fmt(r.shares)}</td>
 <td class="num" style="color:#888">${r.prev_shares !== null ? fmt(r.prev_shares) : '─'}</td>
 <td class="num">${deltaStr}</td>
