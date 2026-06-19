@@ -292,33 +292,47 @@ document.getElementById('loading').innerHTML = '⏳ 載入資料中…';
 loadData();
 }
 
-// ── 資料价格 API (TWSE) ─────────────────────────────
+// ── 資料价格 API (TWSE STOCK_DAY_ALL) ────────────────────────
 async function fetchPrices(tickers) {
 if (!tickers || tickers.length === 0) return;
 const statusEl = document.getElementById('price-status');
 if (statusEl) statusEl.textContent = '⌛ 載入股價資料中…';
 try {
-// TWSE 公開 API: https://mis.twse.com.tw/stock/api/getStockInfo.jsp
-const codes = tickers.map(t => 'tse_' + t + '.tw').join('|');
-const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${codes}&json=1&delay=0`;
-const resp = await fetch(url, {headers: {'Accept': 'application/json'}});
+// TWSE 每日収盤資料 (STOCK_DAY_ALL): 支持 CORS
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth()+1).padStart(2,'0');
+const dd = String(today.getDate()).padStart(2,'0');
+const dateStr = yyyy + mm + dd;
+const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=${dateStr}`;
+const resp = await fetch(url);
 if (!resp.ok) throw new Error('HTTP ' + resp.status);
 const json = await resp.json();
 PRICE_DATA = {};
-if (json.msgArray) {
-for (const item of json.msgArray) {
-const ticker = item.c; // stock code
-const price = parseFloat(item.z !== '-' ? item.z : item.y) || null; // z=current/last, y=yesterday close
-const yClose = parseFloat(item.y) || null;
-const change = (price !== null && yClose !== null) ? parseFloat((price - yClose).toFixed(2)) : null;
-const changeP = (change !== null && yClose) ? parseFloat((change / yClose * 100).toFixed(2)) : null;
-PRICE_DATA[ticker] = { price, change, changeP };
+if (json.data && json.fields) {
+// fields: [證券代號, 證券名稱, 成交股數, 成交金額, 開盤價, 最高價, 最低價, 收盤價, 漲跌價差, 成交筆數]
+const tickerSet = new Set(tickers);
+for (const row of json.data) {
+const ticker = row[0].trim();
+if (!tickerSet.has(ticker)) continue;
+const closeStr = row[7].replace(/,/g,'');
+const changeStr = row[8].replace(/,/g,'');
+const close = parseFloat(closeStr);
+const changeSign = changeStr.startsWith('+') ? 1 : changeStr.startsWith('-') ? -1 : 0;
+const changeVal = parseFloat(changeStr.replace(/[+\-]/g,'')) * changeSign;
+const prevClose = close - changeVal;
+const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
+PRICE_DATA[ticker] = {
+price: isNaN(close) ? null : close,
+change: isNaN(changeVal) ? null : parseFloat(changeVal.toFixed(2)),
+changeP: isNaN(changeP) ? null : changeP
+};
 }
 }
 if (statusEl) {
 const loaded = Object.keys(PRICE_DATA).length;
 const now = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
-statusEl.textContent = loaded > 0 ? `股價已更新 ${now}（${loaded}/${tickers.length} 支）` : '股價資料暫無（非交易時間）';
+statusEl.textContent = loaded > 0 ? `股價已更新 ${now}（${loaded}/${tickers.length} 支）` : '股價資料暫無（非交易日）';
 }
 } catch(e) {
 console.warn('fetchPrices failed:', e);
@@ -326,7 +340,6 @@ if (statusEl) statusEl.textContent = '股價資料載入失敗';
 }
 renderHoldings();
 }
-
 // ── 載入資料 ────────────────────────────────────────────────
 async function loadData() {
 renderEtfSwitcher();
