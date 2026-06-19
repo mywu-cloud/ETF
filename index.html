@@ -345,12 +345,15 @@ changeP: changeP
 // Step 2: OTC 上櫃股票（未從 TWSE 取得者）用 FinMind API 補抓
 const missingTickers = tickers.filter(t => t && !PRICE_DATA[t]);
 if (missingTickers.length > 0) {
-const base = 'https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&start_date=' + isoDate;
+// FinMind 以近 7 天為範圍，取最後一筆（確保能抓到最新收盤日）
+const d7ago = new Date(today); d7ago.setDate(d7ago.getDate() - 7);
+const startDate = d7ago.getFullYear() + '-' + String(d7ago.getMonth()+1).padStart(2,'0') + '-' + String(d7ago.getDate()).padStart(2,'0');
+const base = 'https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&start_date=' + startDate;
 const otcResults = await Promise.allSettled(
 missingTickers.map(t =>
 fetch(base + '&data_id=' + t)
 .then(r => r.json())
-.then(d => ({ticker: t, row: d.data?.[0]}))
+.then(d => ({ticker: t, row: d.data?.[d.data.length - 1]}))
 )
 );
 for (const result of otcResults) {
