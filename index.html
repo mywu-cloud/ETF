@@ -308,101 +308,129 @@ async function fetchPrices(tickers) {
 if (!tickers || tickers.length === 0) return;
 const statusEl = document.getElementById('price-status');
 if (statusEl) statusEl.textContent = '⌛ 載入股價資料中…';
-try {
+
 const today = new Date();
 const yyyy = today.getFullYear();
 const mm = String(today.getMonth()+1).padStart(2,'0');
 const dd = String(today.getDate()).padStart(2,'0');
 const dateStr = yyyy + mm + dd;
-const isoDate = yyyy + '-' + mm + '-' + dd;
+const cacheKey = 'price_cache_' + dateStr;
 
 PRICE_DATA = {};
 
-// Step 1: TWSE 上市股票
-const twseResp = await fetch('https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=' + dateStr);
-if (twseResp.ok) {
-const twseText = await twseResp.text();
-const tickerSet = new Set(tickers);
-// Parse CSV format (API changed from JSON to CSV)
-const lines = twseText.trim().split('\n');
-const isCSV = lines[0] && lines[0].includes('日期');
-if (isCSV) {
+// ── 解析 TWSE CSV 工具函式 ───────────────────────────
+function parseTWSEcsv(text, tickerSet) {
+const lines = text.trim().split('\n');
+if (!lines[0] || !lines[0].includes('日期')) return;
 for (let i = 1; i < lines.length; i++) {
 const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
 if (cols.length < 10) continue;
 const ticker = cols[1];
-if (!tickerSet.has(ticker)) continue;
+if (tickerSet && !tickerSet.has(ticker)) continue;
 const close = parseFloat(cols[8].replace(/,/g,''));
 const changeVal = parseFloat(cols[9].replace(/,/g,''));
-const prevClose = close - changeVal;
-const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
-if (!isNaN(close)) {
-PRICE_DATA[ticker] = {
-price: close,
-change: parseFloat(changeVal.toFixed(2)),
-changeP: changeP
-};
-}
-}
-} else {
-// Legacy JSON format fallback
-try {
-const twseJson = JSON.parse(twseText);
-for (const row of (twseJson.data || [])) {
-const ticker = row[0].trim();
-if (!tickerSet.has(ticker)) continue;
-const close = parseFloat(row[7].replace(/,/g,''));
-const changeStr = row[8].replace(/,/g,'');
-const changeSign = changeStr.startsWith('+') ? 1 : changeStr.startsWith('-') ? -1 : 0;
-const changeVal = parseFloat(changeStr.replace(/[+\-]/g,'')) * changeSign;
 const prevClose = close - changeVal;
 const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
 if (!isNaN(close)) {
 PRICE_DATA[ticker] = { price: close, change: parseFloat(changeVal.toFixed(2)), changeP };
 }
 }
-} catch(e) {}
-}
 }
 
-// Step 2: OTC 上櫃股票（未從 TWSE 取得者）用 FinMind API 補抓
-const missingTickers = tickers.filter(t => t && !PRICE_DATA[t]);
-if (missingTickers.length > 0) {
-// FinMind 以近 7 天為範圍，取最後一筆（確保能抓到最新收盤日）
-const d7ago = new Date(today); d7ago.setDate(d7ago.getDate() - 7);
-const startDate = d7ago.getFullYear() + '-' + String(d7ago.getMonth()+1).padStart(2,'0') + '-' + String(d7ago.getDate()).padStart(2,'0');
+// ── Step 1: 讀取 sessionStorage 快取 ─────────────────
+try {
+const cached = sessionStorage.getItem(cacheKey);
+if (cached) {
+const parsed = JSON.parse(cached);
+Object.assign(PRICE_DATA, parsed);
+}
+} catch(e) {}
+
+const stillMissing = tickers.filter(t => t && !PRICE_DATA[t]);
+if (stillMissing.length === 0) {
+renderHoldings();
+if (statusEl) {
+const loaded = Object.keys(PRICE_DATA).length;
+statusEl.textContent = `股價已更新（快取）（${loaded}/${tickers.length} 支）`;
+}
+return;
+}
+
+const tickerSet = new Set(stillMissing);
+
+// ── Step 2: TWSE 上市股票（CSV）────────────────────────
+try {
+const twseResp = await fetch('https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=' + dateStr);
+if (twseResp.ok) {
+const twseText = await twseResp.text();
+parseTWSEcsv(twseText, tickerSet);
+}
+} catch(e) { console.warn('TWSE fetch failed:', e); }
+
+// ── Step 3: TPEx 上櫃股票（CSV）────────────────────────
+const missingAfterTWSE = stillMissing.filter(t => !PRICE_DATA[t]);
+if (missingAfterTWSE.length > 0) {
+const rocYear = parseInt(yyyy) - 1911;
+const tpexUrl = 'https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&d=' + rocYear + '/' + mm + '/' + dd + '&se=AL&s=0,asc,0&_=' + Date.now();
+try {
+const tpexResp = await fetch(tpexUrl);
+if (tpexResp.ok) {
+const tpexText = await tpexResp.text();
+// TPEx returns JSON with aaData array
+const tpexJson = JSON.parse(tpexText);
+const missingSet = new Set(missingAfterTWSE);
+for (const row of (tpexJson.aaData || [])) {
+// TPEx columns: [0]代號 [1]名稱 [2]收盤 [3]漲跌 [4]開盤 [5]最高 [6]最低 [7]成交量 ...
+const ticker = (row[0] || '').trim();
+if (!missingSet.has(ticker)) continue;
+const close = parseFloat((row[2] || '').replace(/,/g,''));
+const changeRaw = (row[3] || '').replace(/,/g,'').replace(/△/,'+').replace(/▽/,'-');
+const changeVal = parseFloat(changeRaw) || 0;
+const prevClose = close - changeVal;
+const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
+if (!isNaN(close)) {
+PRICE_DATA[ticker] = { price: close, change: parseFloat(changeVal.toFixed(2)), changeP };
+}
+}
+}
+} catch(e) { console.warn('TPEx fetch failed:', e); }
+}
+
+// ── Step 4: FinMind 補抓剩餘未取得者（含快取）──────────
+const missingAfterTPEx = tickers.filter(t => t && !PRICE_DATA[t]);
+if (missingAfterTPEx.length > 0) {
+const d14ago = new Date(today); d14ago.setDate(d14ago.getDate() - 14);
+const startDate = d14ago.getFullYear() + '-' + String(d14ago.getMonth()+1).padStart(2,'0') + '-' + String(d14ago.getDate()).padStart(2,'0');
 const base = 'https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&start_date=' + startDate;
-const otcResults = await Promise.allSettled(
-missingTickers.map(t =>
-fetch(base + '&data_id=' + t)
-.then(r => r.json())
-.then(d => ({ticker: t, row: d.data?.[d.data.length - 1]}))
-)
-);
-for (const result of otcResults) {
-if (result.status === 'fulfilled' && result.value.row) {
-const {ticker, row} = result.value;
+// Sequential requests with small delay to avoid rate limit burst
+for (const t of missingAfterTPEx) {
+try {
+await new Promise(r => setTimeout(r, 150)); // 150ms delay between requests
+const resp = await fetch(base + '&data_id=' + t);
+const d = await resp.json();
+if (d.data && d.data.length > 0) {
+const row = d.data[d.data.length - 1];
 const close = row.close;
 const changeVal = row.spread;
 const prevClose = close - changeVal;
 const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
-PRICE_DATA[ticker] = {
-price: close,
-change: parseFloat(changeVal.toFixed(2)),
-changeP: changeP
-};
+PRICE_DATA[t] = { price: close, change: parseFloat(changeVal.toFixed(2)), changeP };
 }
+} catch(e) { console.warn('FinMind fetch failed for', t, e); }
 }
 }
 
-if (statusEl) {
+// ── 儲存至 sessionStorage 快取 ────────────────────────
+try {
+sessionStorage.setItem(cacheKey, JSON.stringify(PRICE_DATA));
+} catch(e) {}
+
 const loaded = Object.keys(PRICE_DATA).length;
 const now = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
-statusEl.textContent = loaded > 0 ? `股價已更新 ${now}（${loaded}/${tickers.length} 支）` : '股價資料暫無（非交易日）';
-}
-} catch(e) {
-console.warn('fetchPrices failed:', e);
-if (statusEl) statusEl.textContent = '股價資料載入失敗';
+if (statusEl) {
+statusEl.textContent = loaded > 0
+? `股價已更新 ${now}（${loaded}/${tickers.length} 支）`
+: '股價資料暫無（非交易日）';
 }
 renderHoldings();
 }
