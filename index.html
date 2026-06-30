@@ -321,8 +321,33 @@ PRICE_DATA = {};
 // Step 1: TWSE 上市股票
 const twseResp = await fetch('https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL?response=json&date=' + dateStr);
 if (twseResp.ok) {
-const twseJson = await twseResp.json();
+const twseText = await twseResp.text();
 const tickerSet = new Set(tickers);
+// Parse CSV format (API changed from JSON to CSV)
+const lines = twseText.trim().split('\n');
+const isCSV = lines[0] && lines[0].includes('日期');
+if (isCSV) {
+for (let i = 1; i < lines.length; i++) {
+const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
+if (cols.length < 10) continue;
+const ticker = cols[1];
+if (!tickerSet.has(ticker)) continue;
+const close = parseFloat(cols[8].replace(/,/g,''));
+const changeVal = parseFloat(cols[9].replace(/,/g,''));
+const prevClose = close - changeVal;
+const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
+if (!isNaN(close)) {
+PRICE_DATA[ticker] = {
+price: close,
+change: parseFloat(changeVal.toFixed(2)),
+changeP: changeP
+};
+}
+}
+} else {
+// Legacy JSON format fallback
+try {
+const twseJson = JSON.parse(twseText);
 for (const row of (twseJson.data || [])) {
 const ticker = row[0].trim();
 if (!tickerSet.has(ticker)) continue;
@@ -333,12 +358,10 @@ const changeVal = parseFloat(changeStr.replace(/[+\-]/g,'')) * changeSign;
 const prevClose = close - changeVal;
 const changeP = prevClose !== 0 ? parseFloat((changeVal / prevClose * 100).toFixed(2)) : 0;
 if (!isNaN(close)) {
-PRICE_DATA[ticker] = {
-price: close,
-change: parseFloat(changeVal.toFixed(2)),
-changeP: changeP
-};
+PRICE_DATA[ticker] = { price: close, change: parseFloat(changeVal.toFixed(2)), changeP };
 }
+}
+} catch(e) {}
 }
 }
 
