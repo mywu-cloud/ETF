@@ -507,6 +507,10 @@ let pieChart, barChart;
 const COLORS = ['#4361ee','#7b97ff','#f72585','#3a0ca3','#7209b7','#560bad',
 '#480ca8','#3f37c9','#4895ef','#4cc9f0'];
 
+function tickerLabel(r) {
+return r.ticker ? `${r.ticker} ${r.name}` : r.name;
+}
+
 function renderCharts() {
 const date = document.getElementById('chart-snap-sel').value;
 if (!date || !DATA[date]) return;
@@ -518,7 +522,7 @@ if (barChart) barChart.destroy();
 pieChart = new Chart(document.getElementById('chart-pie'), {
 type: 'doughnut',
 data: {
-labels: top10.map(r => r.name),
+labels: top10.map(r => tickerLabel(r)),
 datasets: [{ data: top10.map(r => r.weight), backgroundColor: COLORS }]
 },
 options: { plugins: { legend: { position: window.innerWidth <= 600 ? 'bottom' : 'right', labels: { font: { size: window.innerWidth <= 600 ? 11 : 11 }, boxWidth: window.innerWidth <= 600 ? 10 : 40 } } }, cutout: '55%' }
@@ -526,7 +530,7 @@ options: { plugins: { legend: { position: window.innerWidth <= 600 ? 'bottom' : 
 barChart = new Chart(document.getElementById('chart-bar'), {
 type: 'bar',
 data: {
-labels: top20.map(r => r.name),
+labels: top20.map(r => tickerLabel(r)),
 datasets: [{
 label: '投資比例 (%)',
 data: top20.map(r => r.weight),
@@ -554,7 +558,7 @@ y: {
 ticks: {
 font: { size: 14, weight: '600' },
 color: '#1a1a2e',
-callback: (val, i) => `${i+1}. ${top20[i]?.name ?? val}`
+callback: (val, i) => `${i+1}. ${top20[i] ? tickerLabel(top20[i]) : val}`
 },
 grid: { display: false }
 }
@@ -590,8 +594,8 @@ const wSign = r.deltaW > 0 ? '+' : '';
 const sc = r.deltaS > 0 ? '#dc2626' : r.deltaS < 0 ? '#16a34a' : '#aaa';
 const sSign = r.deltaS > 0 ? '+' : '';
 return `<tr>
-<td><b>${r.name}</b></td>
 <td style="color:#4361ee">${r.ticker||'─'}</td>
+<td><b>${r.name}</b></td>
 <td class="num">${r.ow.toFixed(2)}%</td>
 <td class="num">${r.nw.toFixed(2)}%</td>
 <td class="num ${wc}">${r.deltaW !== 0 ? wSign+r.deltaW.toFixed(2)+'%' : '─'}</td>
@@ -672,8 +676,8 @@ const dss = (o && n)
 : (o ? `<b style="color:#16a34a">-${fmt(os)}</b>`
 : `<b style="color:#dc2626">+${fmt(ns)}</b>`);
 return `<tr class="${cls}">
-<td><b>${name}</b></td>
 <td style="color:#4361ee">${(o||n).ticker||'─'}</td>
+<td><b>${name}</b></td>
 <td class="num">${o ? ow.toFixed(2)+'%' : '─'}</td>
 <td class="num">${n ? nw.toFixed(2)+'%' : '─'}</td>
 <td class="num ${wc}">${deltaW !== 0 ? (deltaW>0?'+':'')+deltaW.toFixed(2)+'%' : '─'}</td>
@@ -685,7 +689,7 @@ return `<tr class="${cls}">
 const staticSection = (title, names, cls, getO, getN) => names.length === 0 ? '' : `
 <div class="card"><h2>${title}</h2>
 <div class="tbl-wrap"><table>
-<thead><tr><th>股票名稱</th><th>代碼</th><th>舊比例</th><th>新比例</th><th>比例差異</th><th>舊股數</th><th>新股數</th><th>股數差異</th></tr></thead>
+<thead><tr><th>代碼</th><th>股票名稱</th><th>舊比例</th><th>新比例</th><th>比例差異</th><th>舊股數</th><th>新股數</th><th>股數差異</th></tr></thead>
 <tbody>${names.map(n => staticRow(n, cls, getO(n), getN(n))).join('')}</tbody>
 </table></div>
 </div>`;
@@ -695,8 +699,8 @@ const changedSection = _changedRows.length === 0 ? '' : `
 <div class="card"><h2>🔵 比例 / 股數變化</h2>
 <div class="tbl-wrap"><table id="diff-changed-tbl">
 <thead><tr>
-${TH('股票名稱','name')}
 ${TH('代碼','ticker')}
+${TH('股票名稱','name')}
 ${TH('舊比例','ow')}
 ${TH('新比例','nw')}
 ${TH('比例差異','deltaW')}
