@@ -1,107 +1,107 @@
 {
-  "data_date": "2026-09-10",
-  "fetched_at": "2026-09-10T16:07:29",
+  "data_date": "2026-09-11",
+  "fetched_at": "2026-09-11T14:55:51",
   "holdings": [
     {
       "ticker": "2330",
       "name": "台積電",
-      "weight": 15.37,
+      "weight": 15.45,
       "shares": 9800000
     },
     {
       "ticker": "2454",
       "name": "聯發科",
-      "weight": 6.68,
+      "weight": 6.63,
       "shares": 2210000
     },
     {
       "ticker": "3017",
       "name": "奇鋐",
-      "weight": 6.31,
+      "weight": 6.28,
       "shares": 2850000
     },
     {
       "ticker": "2383",
       "name": "台光電",
-      "weight": 5.51,
+      "weight": 5.62,
       "shares": 1600000
     },
     {
       "ticker": "3037",
       "name": "欣興",
-      "weight": 5.38,
+      "weight": 5.41,
       "shares": 8460000
     },
     {
       "ticker": "2303",
       "name": "聯電",
-      "weight": 5.02,
+      "weight": 5.06,
       "shares": 55000000
     },
     {
       "ticker": "3653",
       "name": "健策",
-      "weight": 4.13,
+      "weight": 4.21,
       "shares": 1115000
     },
     {
       "ticker": "6223",
       "name": "旺矽",
-      "weight": 3.96,
+      "weight": 4.04,
       "shares": 1100000
     },
     {
       "ticker": "6669",
       "name": "緯穎",
-      "weight": 2.98,
+      "weight": 3.0,
       "shares": 1987956
     },
     {
       "ticker": "2308",
       "name": "台達電",
-      "weight": 2.95,
+      "weight": 2.91,
       "shares": 2750000
     },
     {
       "ticker": "2327",
       "name": "國巨*",
-      "weight": 2.93,
+      "weight": 2.85,
       "shares": 8000000
     },
     {
       "ticker": "2345",
       "name": "智邦",
-      "weight": 2.9,
+      "weight": 2.85,
       "shares": 2307000
     },
     {
       "ticker": "3008",
       "name": "大立光",
-      "weight": 2.58,
+      "weight": 2.61,
       "shares": 600000
     },
     {
       "ticker": "3443",
       "name": "創意",
-      "weight": 2.31,
+      "weight": 2.32,
       "shares": 580000
     },
     {
       "ticker": "1303",
       "name": "南亞",
-      "weight": 2.11,
+      "weight": 2.07,
       "shares": 13500000
     },
     {
       "ticker": "8046",
       "name": "南電",
-      "weight": 1.81,
+      "weight": 1.87,
       "shares": 2640000
     },
     {
       "ticker": "3189",
       "name": "景碩",
-      "weight": 1.8,
+      "weight": 1.83,
       "shares": 3400000
     },
     {
@@ -111,39 +111,33 @@
       "shares": 1900000
     },
     {
-      "ticker": "3711",
-      "name": "日月光投控",
-      "weight": 1.66,
-      "shares": 4000000
-    },
-    {
       "ticker": "6488",
       "name": "環球晶",
-      "weight": 1.64,
+      "weight": 1.65,
       "shares": 2800000
     },
     {
       "ticker": "3665",
       "name": "貿聯-KY",
-      "weight": 1.6,
+      "weight": 1.59,
       "shares": 1293000
     },
     {
       "ticker": "5274",
       "name": "信驊",
-      "weight": 1.44,
+      "weight": 1.41,
       "shares": 120500
     },
     {
       "ticker": "2360",
       "name": "致茂",
-      "weight": 1.4,
+      "weight": 1.41,
       "shares": 1000000
     },
     {
       "ticker": "8996",
       "name": "高力",
-      "weight": 1.32,
+      "weight": 1.37,
       "shares": 1580000
     },
     {
@@ -155,8 +149,14 @@
     {
       "ticker": "6239",
       "name": "力成",
-      "weight": 0.97,
+      "weight": 0.96,
       "shares": 5360000
+    },
+    {
+      "ticker": "3711",
+      "name": "日月光投控",
+      "weight": 0.81,
+      "shares": 2000000
     },
     {
       "ticker": "7769",
@@ -167,13 +167,13 @@
     {
       "ticker": "2317",
       "name": "鴻海",
-      "weight": 0.51,
+      "weight": 0.52,
       "shares": 3200000
     },
     {
       "ticker": "3211",
       "name": "順達",
-      "weight": 0.48,
+      "weight": 0.47,
       "shares": 2000000
     },
     {
@@ -185,7 +185,7 @@
     {
       "ticker": "6442",
       "name": "光聖",
-      "weight": 0.4,
+      "weight": 0.38,
       "shares": 350000
     },
     {
@@ -201,9 +201,15 @@
       "shares": 800000
     },
     {
+      "ticker": "2882",
+      "name": "國泰金",
+      "weight": 0.29,
+      "shares": 4000000
+    },
+    {
       "ticker": "2481",
       "name": "強茂",
-      "weight": 0.3,
+      "weight": 0.29,
       "shares": 3000000
     },
     {
@@ -213,21 +219,15 @@
       "shares": 35000
     },
     {
-      "ticker": "2882",
-      "name": "國泰金",
-      "weight": 0.28,
-      "shares": 4000000
-    },
-    {
       "ticker": "3533",
       "name": "嘉澤",
-      "weight": 0.2,
+      "weight": 0.21,
       "shares": 200000
     },
     {
       "ticker": "2404",
       "name": "漢唐",
-      "weight": 0.17,
+      "weight": 0.16,
       "shares": 250000
     },
     {
@@ -251,7 +251,7 @@
     {
       "ticker": "1560",
       "name": "中砂",
-      "weight": 0.09,
+      "weight": 0.1,
       "shares": 191000
     },
     {
@@ -261,16 +261,16 @@
       "shares": 1500000
     },
     {
-      "ticker": "2301",
-      "name": "光寶科",
-      "weight": 0.06,
-      "shares": 300000
-    },
-    {
       "ticker": "6285",
       "name": "啟碁",
       "weight": 0.05,
       "shares": 350000
+    },
+    {
+      "ticker": "2301",
+      "name": "光寶科",
+      "weight": 0.05,
+      "shares": 300000
     },
     {
       "ticker": "8358",
