@@ -2,10 +2,10 @@ name: Daily ETF Update
 
 on:
   schedule:
-    # UTC 11:00 = 台灣時間 19:00
-    - cron: '0 11 * * *'
-    # UTC 12:00 = 台灣時間 20:00
-    - cron: '0 12 * * *'
+    # UTC 10:17 = 台灣時間 18:17（週一～五）
+    - cron: '17 10 * * 1-5'
+    # UTC 11:43 = 台灣時間 19:43（週一～五）
+    - cron: '43 11 * * 1-5'
   workflow_dispatch:
 
 permissions:
